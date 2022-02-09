@@ -1,12 +1,14 @@
 import { useAuth } from "@hooks/useAuth";
 
 export const Header = () => {
-    const { isLoggedIn, login, logout } = useAuth();
+    const { isLoggedIn, login, logout, isLoading } = useAuth();
 
     return (
         <div>
             Header
-            {!isLoggedIn ? (
+            {isLoading ? (
+                <button disabled> Loading... </button>
+            ) : !isLoggedIn ? (
                 <button onClick={login}>Login</button>
             ) : (
                 <button onClick={logout}>Logout</button>
