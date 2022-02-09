@@ -1,12 +1,12 @@
-import { createContext, FC, useState } from "react";
+import { createContext, FC, useEffect, useState } from "react";
 import { ethers } from "ethers";
-
+import { useCookies } from "react-cookie";
 interface IAuthContext {
     isLoggedIn: boolean;
-    token: string | null;
+    getToken: () => string | null;
     login: () => void;
     logout: () => void;
-    user: User | null;
+    getUser: () => User | null;
     isLoading: boolean;
 }
 
@@ -17,18 +17,27 @@ type User = {
 
 export const AuthContext = createContext<IAuthContext>({
     isLoggedIn: false,
-    token: null,
+    getToken: () => null,
     login: () => {},
     logout: () => {},
-    user: null,
+    getUser: () => null,
     isLoading: false,
 });
 
 export const AuthProvider: FC = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-    const [token, setToken] = useState<string | null>(null);
+    const [cookies, setCookie, removeCookie] = useCookies();
+
+    useEffect(() => {
+        setIsLoading(true);
+        let token = cookies["token"];
+        let user = cookies["user"];
+        if (token && user) {
+            setIsLoggedIn(true);
+        }
+        setIsLoading(false);
+    }, []);
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
 
@@ -58,10 +67,9 @@ export const AuthProvider: FC = ({ children }) => {
         )
             .then((res) => res.json())
             .then((res: { token: string; user: User }) => {
-                setToken(res.token);
-                setUser(res.user);
+                setCookie("token", res.token);
+                setCookie("user", res.user);
                 setIsLoggedIn(true);
-                setIsLoading(false);
             })
             .catch((error) => {
                 console.error(error);
@@ -86,14 +94,22 @@ export const AuthProvider: FC = ({ children }) => {
     };
 
     const logout = () => {
+        removeCookie("token");
+        removeCookie("user");
         setIsLoggedIn(false);
-        setToken(null);
-        setUser(null);
+    };
+
+    const getUser = (): User => {
+        return cookies["user"];
+    };
+
+    const getToken = (): string => {
+        return cookies["token"];
     };
 
     return (
         <AuthContext.Provider
-            value={{ isLoggedIn, login, logout, token, user, isLoading }}
+            value={{ isLoggedIn, login, logout, getToken, getUser, isLoading }}
         >
             {children}
         </AuthContext.Provider>

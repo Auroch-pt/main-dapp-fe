@@ -1,7 +1,8 @@
 import { useAuth } from "@hooks/useAuth";
 
 export const Home = () => {
-    const { user } = useAuth();
+    const { getUser } = useAuth();
+    const user = getUser();
 
     return (
         <div>
